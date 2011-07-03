@@ -31,12 +31,40 @@ function hss_update_fb() {
     curl_close($ch);
     return $data;
   }
-	$result = mysql_fetch_assoc(mysql_query("SELECT FIELD FROM TABLE WHERE username='".$current_user->user_login."'"));
-	$data = array(
-  'access_token' => $result['access_token'],
-  'message' => $post_link
-  );
-	$return = json_decode(make_post('https://graph.facebook.com/' . $user->id . '/feed', $data));
+	$result = mysql_query("SELECT FIELD FROM TABLE WHERE username='".$current_user->user_login."'");
+	$facebook = new Facebook(array(
+		'appId'  => 'APP ID',
+		'secret' => 'APP SECRET',
+		'cookie' => true,
+	));
+	while($row = mysql_fetch_assoc($result)) {
+		
+		$data = array(
+		'access_token' => $row['access_token'],
+		'message' => $post_link
+		);
+		
+		$return = $facebook->api('/me/feed', 'POST', $data);
+		$ch = curl_init();
+		curl_setopt($ch, CURLOPT_URL, 'https://graph.facebook.com/me/accounts?access_token='.$row['access_token']);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+	
+		$output = curl_exec($ch);
+		$output_array = explode('":"',$output);
+		for($i=3;$i<=count($output_array);$i+=3) {
+			$output_array2 = explode('"',$output_array[$i]);
+			$output_array3[] = $output_array2[0];
+			unset($output_array2);
+		}
+		for($j=0;$j<=count($output_array3)-1;$j++) {
+			$return2 = $facebook->api('/'.$output_array3[$j].'/feed', 'POST', $data);
+		}
+		unset($output);
+		unset($output_array);
+		unset($output_array3);
+		curl_close($ch);
+	}
+	
 }
 
 	
@@ -52,14 +80,18 @@ function hss_update_fb() {
 	$access_token = $session['access_token'];
 	$session = $facebook->getSession();
 	if ($session) {
-		$result = mysql_num_rows((mysql_query("SELECT FIELD FROM TABLE WHERE username='".$current_user->user_login."'")));
-		if($result==0) {
-			mysql_query("INSERT INTO TABLE (username,access_token) VALUE ('".$current_user->user_login."','".$access_token."')") or die(mysql_error());
+		$result = mysql_num_rows(mysql_query("SELECT FIELD FROM TABLE WHERE username='".$current_user->user_login."'"));
+		if($result!=0) {
+			mysql_query("DELETE FROM TABLE WHERE username='".$current_user->user_login."'") or die(mysql_error());
+			mysql_query("INSERT INTO TABLE (FIELD,FIELD) VALUE ('".$current_user->user_login."','".$access_token."')") or die(mysql_error());
+			
 		}
+		else{
+			mysql_query("INSERT INTO TABLE (FIELD,FIELD) VALUE ('".$current_user->user_login."','".$access_token."')") or die(mysql_error());
+		}
+			
 	}
-
-
-
+		
 
 
 function add_plugin_menu()
@@ -68,14 +100,16 @@ function add_plugin_menu()
 }
 function add_settings_page()
 {
-	
+	global $current_user;
+	wp_get_current_user();
   $facebook = new Facebook(array(
-  'appId'  => 'APP ID',
+  'appId'  => 'APPID',
   'secret' => 'APP SECRET',
+  'scope'  => 'manage_page',
   'cookie' => true,
 ));
 ?>
-            <div id="fb-root"></div>
+            <div id="fb-root" style='margin-top:234px;margin-left:200px;'></div>
             
             <script src="http://connect.facebook.net/en_US/all.js"></script>
 
@@ -83,7 +117,7 @@ function add_settings_page()
 					
                
                 FB.init({
-                    appId:'APP ID', cookie:true,
+                    appId:'129478837133549', cookie:true,
                     status:true, xfbml:true
                 });
                 
@@ -91,7 +125,7 @@ function add_settings_page()
                     FB.login(function(response) {
                         if (response.session) {
                             if (response.perms) {
-                                window.location = "REDIRECT TO THIS URL AFTER SUCCESSFULL LOGIN"
+                                window.location = "REDIRECT URL"
                             } else {
                                 alert('No Permission Granted !!');
                             }
@@ -105,10 +139,9 @@ function add_settings_page()
             </script>
             <!-- simple HTML login button -->
             <a onclick="fbLogin();"><img src="login-button.jpg" /></a>
-        <?php
-        
-
-}
-add_action('publish_post','hss_update_fb');
+        <?php 
+        }
+add_action('new_to_publish','hss_update_fb');
+add_action('draft_to_publish','hss_update_fb');
 add_action('admin_menu', 'add_plugin_menu');
 ?>
