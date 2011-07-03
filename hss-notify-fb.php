@@ -31,7 +31,7 @@ function hss_update_fb() {
     curl_close($ch);
     return $data;
   }
-	$result = mysql_fetch_assoc(mysql_query("SELECT access_token FROM fb_access_tokens WHERE username='".$current_user->user_login."'"));
+	$result = mysql_fetch_assoc(mysql_query("SELECT FIELD FROM TABLE WHERE username='".$current_user->user_login."'"));
 	$data = array(
   'access_token' => $result['access_token'],
   'message' => $post_link
@@ -44,17 +44,17 @@ function hss_update_fb() {
 	global $current_user;
 	wp_get_current_user();
 	$facebook = new Facebook(array(
-		'appId'  => '156232754448221',
-		'secret' => '20df61fed410ebe21fd1e187386cc893',
+		'appId'  => 'APP ID',
+		'secret' => 'APP SECRET',
 		'cookie' => true,
 	));
 	$session = $facebook->getSession();
 	$access_token = $session['access_token'];
 	$session = $facebook->getSession();
 	if ($session) {
-		$result = mysql_num_rows((mysql_query("SELECT access_token FROM fb_access_tokens WHERE username='".$current_user->user_login."'")));
+		$result = mysql_num_rows((mysql_query("SELECT FIELD FROM TABLE WHERE username='".$current_user->user_login."'")));
 		if($result==0) {
-			mysql_query("INSERT INTO fb_access_tokens (username,access_token) VALUE ('".$current_user->user_login."','".$access_token."')") or die(mysql_error());
+			mysql_query("INSERT INTO TABLE (username,access_token) VALUE ('".$current_user->user_login."','".$access_token."')") or die(mysql_error());
 		}
 	}
 
@@ -70,8 +70,8 @@ function add_settings_page()
 {
 	
   $facebook = new Facebook(array(
-  'appId'  => '156232754448221',
-  'secret' => '20df61fed410ebe21fd1e187386cc893',
+  'appId'  => 'APP ID',
+  'secret' => 'APP SECRET',
   'cookie' => true,
 ));
 ?>
@@ -83,7 +83,7 @@ function add_settings_page()
 					
                
                 FB.init({
-                    appId:'156232754448221', cookie:true,
+                    appId:'APP ID', cookie:true,
                     status:true, xfbml:true
                 });
                 
@@ -91,7 +91,7 @@ function add_settings_page()
                     FB.login(function(response) {
                         if (response.session) {
                             if (response.perms) {
-                                window.location = "http://psd2press.com/wp-admin/options-general.php?page=hss-notify-fb/hss-notify-fb.php"
+                                window.location = "REDIRECT TO THIS URL AFTER SUCCESSFULL LOGIN"
                             } else {
                                 alert('No Permission Granted !!');
                             }
@@ -104,7 +104,7 @@ function add_settings_page()
 
             </script>
             <!-- simple HTML login button -->
-            <a onclick="fbLogin();"><img src="http://psd2press.com/wp-content/plugins/hss-notify-fb/login-button.jpg" /></a>
+            <a onclick="fbLogin();"><img src="login-button.jpg" /></a>
         <?php
         
 
